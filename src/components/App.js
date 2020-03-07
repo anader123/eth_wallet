@@ -4,12 +4,17 @@ import './App.css';
 import Web3 from 'web3';
 import DaiTokenMock from '../abis/DaiTokenMock.json'
 
+// Components
+import TxInfo from './TxInfo';
+import TransferForm from './TransferForm';
+
 class App extends Component {
 
   constructor(props) {
     super(props)
     this.state = {
       account: '',
+      shortAccount: '',
       daiTokenMock: null,
       balance: 0,
       transactions: [],
@@ -19,7 +24,6 @@ class App extends Component {
   }
 
   async componentDidMount() {
-    console.log(window.ethereum.selectedAddress)
     if(window.ethereum.selectedAddress !== undefined) { 
       await this.loadWeb3();
       await this.loadBlockchainData();
@@ -38,11 +42,13 @@ class App extends Component {
 
   loadWeb3 = async () => {
     if (window.ethereum) {
-      window.web3 = new Web3(window.ethereum)
-      await window.ethereum.enable()
+      const web3 = new Web3(window.ethereum);
+      await window.ethereum.enable();
+      this.setState({ web3 });
     }
     else if (window.web3) {
-      window.web3 = new Web3(window.web3.currentProvider)
+      const web3 = new Web3(window.web3.currentProvider);
+      this.setState({ web3 });
     }
     else {
       window.alert('Non-Ethereum browser detected. You should consider trying MetaMask!')
@@ -50,11 +56,11 @@ class App extends Component {
   }
 
   loadBlockchainData = async () => {
-    const { daiTokenAddress, account } = this.state;
+    const { daiTokenAddress, account, web3 } = this.state;
 
-    const web3 = window.web3
-    const accounts = await web3.eth.getAccounts()
-    this.setState({ account: accounts[0] })
+    const accounts = await web3.eth.getAccounts();
+    const shortAccount = `${accounts[0].slice(0, 5)}...${accounts[0].slice(36, 41)}`
+    this.setState({ account: accounts[0], shortAccount })
 
     const daiTokenMock = new web3.eth.Contract(DaiTokenMock.abi, daiTokenAddress)
     this.setState({ daiTokenMock: daiTokenMock });
@@ -67,20 +73,36 @@ class App extends Component {
     console.log(transactions)
   }
 
-  transfer = async (recipient, amount) => {
-    const { daiTokenMock, account } = this.state;
-    const balance = await daiTokenMock.methods.balanceOf(account);
+  transferDai = async (recipient, amount) => {
+    const { daiTokenMock, account, web3 } = this.state;
+    const decimalBalance = await daiTokenMock.methods.balanceOf(account).call();
+
+    // console.log(decimalBalance)
+
+    // const balance = web3.utils.fromWei(decimalBalance);
+
+    // console.log(balance)
     
-    if(balance >= amount) {
-      daiTokenMock.methods.transfer(recipient, amount).send({ from: account });
-    }
-    else {
-      window.alert("You have less than that amount of DAI in this address");
-    }
+    // if(balance >= amount) {
+      await daiTokenMock.methods.transfer(recipient, amount).send({ from: account });
+      const transactions = await daiTokenMock.getPastEvents('Transfer', { fromBlock: 0, toBlock: 'latest', filter: { from: account } })
+      this.setState({ transactions })
+      console.log(transactions)
+    // }
+    // else {
+    //   window.alert("You have less than that amount of DAI in this address");
+    // }
   }
 
   render() {
-    const { balance, transactions, account, walletConnected } = this.state;
+    const { 
+      balance, 
+      transactions, 
+      account, 
+      walletConnected, 
+      shortAccount,
+      web3
+    } = this.state;
     return (
       <div>
         <nav className="navbar navbar-dark fixed-top bg-dark flex-md-nowrap p-0 shadow">
@@ -94,12 +116,12 @@ class App extends Component {
           <button onClick={this.connectWallet}>Connect Wallet</button>
           :
           <a
-            className="navbar-brand col-sm-3 col-md-2 mr-0"
+            className="navbar-brand"
             href={`https://etherscan.io/address/${account}`}
             target="_blank"
             rel="noopener noreferrer"
           >
-            {account}
+            {shortAccount}
           </a>
           }
         </nav>
@@ -107,67 +129,17 @@ class App extends Component {
           <div className="row">
             <main role="main" className="col-lg-12 d-flex text-center">
               <div className="content mr-auto ml-auto" style={{ width: "500px" }}>
+                <br/>
                 <img src={daiLogo} width="150" />
+                <br/>
                 {!walletConnected
                 ?
                 <div>Connect wallet to continue.</div>
                 :
                 <div>
                   <h1>{balance} DAI</h1>
-                  <form onSubmit={(event) => {
-                    event.preventDefault()
-                    const recipient = this.recipient.value
-                    const amount = window.web3.utils.toWei(this.amount.value, 'Ether')
-                    this.transfer(recipient, amount)
-                  }}>
-                    <div className="form-group mr-sm-2">
-                      <input
-                        id="recipient"
-                        type="text"
-                        ref={(input) => { this.recipient = input }}
-                        className="form-control"
-                        placeholder="Recipient Address"
-                        required />
-                    </div>
-                    <div className="form-group mr-sm-2">
-                      <input
-                        id="amount"
-                        type="text"
-                        ref={(input) => { this.amount = input }}
-                        className="form-control"
-                        placeholder="Amount"
-                        required />
-                    </div>
-                    <button type="submit" className="btn btn-primary btn-block">Send</button>
-                  </form>
-                  <table className="table">
-                    <thead>
-                      <tr>
-                        <th scope="col">Recipient</th>
-                        <th scope="col">Amount</th>
-                        <th scope="col">Tx</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      { transactions.map((tx, key) => {
-                        return (
-                          <tr key={key} >
-                            <td>{tx.returnValues.to}</td>
-                            <td>{window.web3.utils.fromWei(tx.returnValues.value.toString(), 'Ether')} DAI </td>
-                            <td>
-                              <a
-                              href={`https://etherscan.io/tx/${tx.transactionHash}`}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              >
-                                View
-                              </a>
-                            </td>
-                          </tr>
-                        )
-                      }) }
-                    </tbody>
-                  </table>
+                  <TransferForm web3={web3} transferDai={this.transferDai}/>
+                  <TxInfo web3={web3} transactions={transactions}/>
                 </div>
                 }
               </div>
