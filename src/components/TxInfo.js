@@ -2,7 +2,13 @@ import React, { Component } from 'react'
 
 export default class TxInfo extends Component {
     render() {
-        const { web3, transactions, tokenSymbol } = this.props;
+        const { 
+          web3, 
+          transactions, 
+          tokenSymbol, 
+          formatTokenAmount, 
+          tokenDecimals
+        } = this.props;
         return (
             <div>
                 <table className="table">

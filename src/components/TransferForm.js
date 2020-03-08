@@ -1,8 +1,14 @@
-import React, { Component } from 'react'
+import React, { Component } from 'react';
+import { Dropdown, DropdownButton, Button } from 'react-bootstrap';
 
 export default class TransferForm extends Component {
     render() {
-        const { web3, transferDai } = this.props;
+        const { 
+          web3, 
+          transferDai, 
+          changeToken, 
+          tokenSymbol 
+        } = this.props;
         return (
             <div>
                  <form 
@@ -33,6 +39,16 @@ export default class TransferForm extends Component {
                     </div>
                     <button type="submit" className="btn btn-primary btn-block send-btn">Send</button>
                   </form>
+                  <DropdownButton
+                    title={tokenSymbol}
+                    variant='primary'
+                    id='dropdown-variants-Primary'
+                    key='Input-Token'
+                    >
+                        <Dropdown.Item onSelect={() => changeToken(0)} eventKey="1">DAI</Dropdown.Item>
+                        <Dropdown.Item onSelect={() => changeToken(1)} eventKey="2">USDC</Dropdown.Item>
+                  </DropdownButton>
+                  <br/>
             </div>
         )
     }

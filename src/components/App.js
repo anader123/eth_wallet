@@ -4,6 +4,9 @@ import Web3 from 'web3';
 import { abi } from '../abis/DaiTokenMock.json';
 import { tokenData } from '../utils/tokenData';
 
+// Big Num
+import BigNumber from 'bignumber.js';
+
 // Images
 import usdcLogo from '../img/usdc.svg'
 import daiLogo from '../img/dai-logo.png';
@@ -29,6 +32,8 @@ class App extends Component {
       tokenSymbol: 'DAI',
       tokenDecimals: 18
     }
+
+    BigNumber.config({ DECIMAL_PLACES: 4 });
   }
 
   async componentDidMount() {
@@ -68,7 +73,7 @@ class App extends Component {
   }
 
   loadBlockchainData = async () => {
-    const { tokenAddress, web3 } = this.state;
+    const { tokenAddress, web3, tokenDecimals, tokenSymbol } = this.state;
 
     const accounts = await web3.eth.getAccounts();
     const account = accounts[0]; 
@@ -79,23 +84,25 @@ class App extends Component {
     const tokenContractInstance = new web3.eth.Contract(abi, tokenAddress)
     this.setState({ tokenContractInstance });
 
-    const balance = await tokenContractInstance.methods.balanceOf(account).call()
-    this.setState({ balance: web3.utils.fromWei(balance.toString(), 'Ether') })
+    const decimalsBalance = await tokenContractInstance.methods.balanceOf(account).call();
+    const balance = this.formatTokenAmount(decimalsBalance, tokenDecimals)
+    this.setState({ balance })
 
     const transactions = await tokenContractInstance.getPastEvents('Transfer', { fromBlock: 0, toBlock: 'latest', filter: { from: account } })
     this.setState({ transactions })
-    console.log(transactions)
   }
 
-  changeToken = (index) => {
+  changeToken = async (index) => {
     const { web3 } = this.state;
 
     const tokenAddress = tokenData[index].address;
     const tokenSymbol = tokenData[index].symbol;
     const tokenDecimals = tokenData[index].decimal;
-    const tokenContractInstance = new web3.eth.Contract(abi, tokenAddress)
-
-    this.setState({ tokenAddress, tokenSymbol, tokenDecimals, tokenContractInstance })
+    // const tokenContractInstance = new web3.eth.Contract(abi, tokenAddress);
+    
+    await this.setState({ tokenAddress, tokenSymbol, tokenDecimals })
+    
+    this.loadBlockchainData();
 
     if(index === 0) {
       this.setState({ tokenImg: daiLogo });
@@ -118,12 +125,17 @@ class App extends Component {
     // if(balance >= amount) {
       await tokenContractInstance.methods.transfer(recipient, amount).send({ from: account });
       const transactions = await tokenContractInstance.getPastEvents('Transfer', { fromBlock: 0, toBlock: 'latest', filter: { from: account } })
-      this.setState({ transactions })
+      this.setState({ transactions });
       console.log(transactions)
     // }
     // else {
     //   window.alert("You have less than that amount of DAI in this address");
     // }
+  }
+
+  formatTokenAmount = (amount, decimals) => {
+    const bn = new BigNumber(amount);
+    return bn.shiftedBy(-decimals).toString(10);
   }
 
   render() {
@@ -135,7 +147,8 @@ class App extends Component {
       shortAccount,
       web3,
       tokenImg,
-      tokenSymbol
+      tokenSymbol,
+      tokenDecimals    
     } = this.state;
 
     return (
@@ -144,8 +157,7 @@ class App extends Component {
         walletConnected={walletConnected} 
         account={account} 
         shortAccount={shortAccount} 
-        connectWallet={this.connectWallet}
-        changeToken={this.changeToken}
+        connectWallet={this.connectWallet}  
         />
         <div className="container-fluid mt-5">
           <div className="row">
@@ -162,12 +174,16 @@ class App extends Component {
                   <h1>{balance} {tokenSymbol}</h1>
                   <TransferForm 
                   web3={web3} 
-                  transferDai={this.transferDai} 
+                  transferDai={this.transferDai}
+                  changeToken={this.changeToken}
+                  tokenSymbol={tokenSymbol}
                   />
                   <TxInfo 
                   web3={web3} 
                   transactions={transactions}
                   tokenSymbol={tokenSymbol}
+                  formatTokenAmount={this.formatTokenAmount}
+                  tokenDecimals={tokenDecimals}
                   />
                 </div>
                 }
