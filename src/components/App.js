@@ -1,8 +1,12 @@
 import React, { Component } from 'react';
-import daiLogo from '../dai-logo.png';
 import './App.css';
 import Web3 from 'web3';
-import DaiTokenMock from '../abis/DaiTokenMock.json'
+import { abi } from '../abis/DaiTokenMock.json';
+import { tokenData } from '../utils/tokenData';
+
+// Images
+import usdcLogo from '../img/usdc.svg'
+import daiLogo from '../img/dai-logo.png';
 
 // Components
 import TxInfo from './TxInfo';
@@ -16,29 +20,36 @@ class App extends Component {
     this.state = {
       account: '',
       shortAccount: '',
-      daiTokenMock: null,
+      tokenContractInstance: null,
       balance: 0,
       transactions: [],
-      daiTokenAddress: "0xA3019CB8Ab1ED67cA4d7957EC4FA630803A075a1",
-      walletConnected: false
+      tokenAddress: "0x8E4b528F0B28Da2014874539837C1f6a464307a6",
+      walletConnected: false,
+      tokenImg: daiLogo,
+      tokenSymbol: 'DAI',
+      tokenDecimals: 18
     }
   }
 
   async componentDidMount() {
-    if(window.ethereum.selectedAddress !== undefined) { 
-      await this.loadWeb3();
-      await this.loadBlockchainData();
-      this.setState({ walletConnected: true });
-    } 
-    else {
-      console.log('hit here')
-    }
+    // await this.loadWeb3();
+    // await this.loadBlockchainData();
+    // this.setState({ walletConnected: true });
+    this.checkAccount();
   }
 
   connectWallet = async () => {
     await this.loadWeb3();
     await this.loadBlockchainData();
     this.setState({ walletConnected: true });
+  }
+
+  checkAccount = async () => {
+    window.ethereum.on('accountsChanged', accounts => {
+      if(this.state.web3) {
+        this.loadBlockchainData();
+      }
+    })
   }
 
   loadWeb3 = async () => {
@@ -57,26 +68,46 @@ class App extends Component {
   }
 
   loadBlockchainData = async () => {
-    const { daiTokenAddress, account, web3 } = this.state;
+    const { tokenAddress, web3 } = this.state;
 
     const accounts = await web3.eth.getAccounts();
-    const shortAccount = `${accounts[0].slice(0, 5)}...${accounts[0].slice(36, 41)}`
-    this.setState({ account: accounts[0], shortAccount })
+    const account = accounts[0]; 
 
-    const daiTokenMock = new web3.eth.Contract(DaiTokenMock.abi, daiTokenAddress)
-    this.setState({ daiTokenMock: daiTokenMock });
+    const shortAccount = `${account.slice(0, 5)}...${account.slice(37, 42)}`
+    this.setState({ account: account, shortAccount })
 
-    const balance = await daiTokenMock.methods.balanceOf(accounts[0]).call()
+    const tokenContractInstance = new web3.eth.Contract(abi, tokenAddress)
+    this.setState({ tokenContractInstance });
+
+    const balance = await tokenContractInstance.methods.balanceOf(account).call()
     this.setState({ balance: web3.utils.fromWei(balance.toString(), 'Ether') })
 
-    const transactions = await daiTokenMock.getPastEvents('Transfer', { fromBlock: 0, toBlock: 'latest', filter: { from: account } })
+    const transactions = await tokenContractInstance.getPastEvents('Transfer', { fromBlock: 0, toBlock: 'latest', filter: { from: account } })
     this.setState({ transactions })
     console.log(transactions)
   }
 
+  changeToken = (index) => {
+    const { web3 } = this.state;
+
+    const tokenAddress = tokenData[index].address;
+    const tokenSymbol = tokenData[index].symbol;
+    const tokenDecimals = tokenData[index].decimal;
+    const tokenContractInstance = new web3.eth.Contract(abi, tokenAddress)
+
+    this.setState({ tokenAddress, tokenSymbol, tokenDecimals, tokenContractInstance })
+
+    if(index === 0) {
+      this.setState({ tokenImg: daiLogo });
+    }
+    else {
+      this.setState({ tokenImg: usdcLogo });
+    }
+  }
+
   transferDai = async (recipient, amount) => {
-    const { daiTokenMock, account, web3 } = this.state;
-    const decimalBalance = await daiTokenMock.methods.balanceOf(account).call();
+    const { tokenContractInstance, account, web3 } = this.state;
+    const decimalBalance = await tokenContractInstance.methods.balanceOf(account).call();
 
     // console.log(decimalBalance)
 
@@ -85,8 +116,8 @@ class App extends Component {
     // console.log(balance)
     
     // if(balance >= amount) {
-      await daiTokenMock.methods.transfer(recipient, amount).send({ from: account });
-      const transactions = await daiTokenMock.getPastEvents('Transfer', { fromBlock: 0, toBlock: 'latest', filter: { from: account } })
+      await tokenContractInstance.methods.transfer(recipient, amount).send({ from: account });
+      const transactions = await tokenContractInstance.getPastEvents('Transfer', { fromBlock: 0, toBlock: 'latest', filter: { from: account } })
       this.setState({ transactions })
       console.log(transactions)
     // }
@@ -102,8 +133,11 @@ class App extends Component {
       account, 
       walletConnected, 
       shortAccount,
-      web3
+      web3,
+      tokenImg,
+      tokenSymbol
     } = this.state;
+
     return (
       <div>
         <Navbar 
@@ -111,22 +145,30 @@ class App extends Component {
         account={account} 
         shortAccount={shortAccount} 
         connectWallet={this.connectWallet}
+        changeToken={this.changeToken}
         />
         <div className="container-fluid mt-5">
           <div className="row">
             <main role="main" className="col-lg-12 d-flex text-center">
               <div className="content mr-auto ml-auto" style={{ width: "500px" }}>
                 <br/>
-                <img src={daiLogo} width="150" />
+                <img src={tokenImg} width="150" />
                 <br/>
                 {!walletConnected
                 ?
                 <div>Connect wallet to continue.</div>
                 :
                 <div>
-                  <h1>{balance} DAI</h1>
-                  <TransferForm web3={web3} transferDai={this.transferDai}/>
-                  <TxInfo web3={web3} transactions={transactions}/>
+                  <h1>{balance} {tokenSymbol}</h1>
+                  <TransferForm 
+                  web3={web3} 
+                  transferDai={this.transferDai} 
+                  />
+                  <TxInfo 
+                  web3={web3} 
+                  transactions={transactions}
+                  tokenSymbol={tokenSymbol}
+                  />
                 </div>
                 }
               </div>

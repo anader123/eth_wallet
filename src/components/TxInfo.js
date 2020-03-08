@@ -2,7 +2,7 @@ import React, { Component } from 'react'
 
 export default class TxInfo extends Component {
     render() {
-        const { web3, transactions } = this.props;
+        const { web3, transactions, tokenSymbol } = this.props;
         return (
             <div>
                 <table className="table">
@@ -18,7 +18,7 @@ export default class TxInfo extends Component {
                         return (
                           <tr key={key} >
                             <td>{tx.returnValues.to}</td>
-                            <td>{web3.utils.fromWei(tx.returnValues.value.toString(), 'Ether')} DAI </td>
+                            <td>{web3.utils.fromWei(tx.returnValues.value.toString(), 'Ether')} {tokenSymbol} </td>
                             <td>
                               <a
                               href={`https://etherscan.io/tx/${tx.transactionHash}`}
