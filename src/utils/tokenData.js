@@ -9,5 +9,10 @@ export const tokenData = [
         "address": "0x2549576FF11d97102C5c30E43963E7ea173544eD",
         "symbol": "USDC",
         "decimal": 6
+    },
+    {
+        "address": "0x2549576FF11d97102C5c30E43963E7ea173544eD",
+        "symbol": "MKR",
+        "decimal": 18
     }
 ];

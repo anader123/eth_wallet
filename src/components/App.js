@@ -8,8 +8,9 @@ import { tokenData } from '../utils/tokenData';
 import BigNumber from 'bignumber.js';
 
 // Images
-import usdcLogo from '../img/usdc.svg'
+import usdcLogo from '../img/usdc.svg';
 import daiLogo from '../img/dai-logo.png';
+import mkrLogo from '../img/mkr-logo.png';
 
 // Components
 import TxInfo from './TxInfo';
@@ -101,18 +102,20 @@ class App extends Component {
     // const tokenContractInstance = new web3.eth.Contract(abi, tokenAddress);
     
     await this.setState({ tokenAddress, tokenSymbol, tokenDecimals })
-    
     this.loadBlockchainData();
 
     if(index === 0) {
       this.setState({ tokenImg: daiLogo });
     }
-    else {
+    else if(index === 1) {
       this.setState({ tokenImg: usdcLogo });
+    }
+    else {
+      this.setState({ tokenImg: mkrLogo });
     }
   }
 
-  transferDai = async (recipient, amount) => {
+  transferToken = async (recipient, amount) => {
     const { tokenContractInstance, account, web3 } = this.state;
     const decimalBalance = await tokenContractInstance.methods.balanceOf(account).call();
 
@@ -123,10 +126,11 @@ class App extends Component {
     // console.log(balance)
     
     // if(balance >= amount) {
-      await tokenContractInstance.methods.transfer(recipient, amount).send({ from: account });
-      const transactions = await tokenContractInstance.getPastEvents('Transfer', { fromBlock: 0, toBlock: 'latest', filter: { from: account } })
-      this.setState({ transactions });
-      console.log(transactions)
+      await tokenContractInstance.methods.transfer(recipient, amount).send({ from: account })
+      .on('confirmation', async () => {
+        this.loadBlockchainData();
+      });
+                                                                              
     // }
     // else {
     //   window.alert("You have less than that amount of DAI in this address");
@@ -136,6 +140,11 @@ class App extends Component {
   formatTokenAmount = (amount, decimals) => {
     const bn = new BigNumber(amount);
     return bn.shiftedBy(-decimals).toString(10);
+  }
+
+  formatTokenAmountToDecimals = (amount, decimals) => {
+    const bn = new BigNumber(amount);
+    return bn.shiftedBy(decimals).toString(10);
   }
 
   render() {
@@ -174,9 +183,11 @@ class App extends Component {
                   <h1>{balance} {tokenSymbol}</h1>
                   <TransferForm 
                   web3={web3} 
-                  transferDai={this.transferDai}
+                  transferToken={this.transferToken}
                   changeToken={this.changeToken}
                   tokenSymbol={tokenSymbol}
+                  formatTokenAmountToDecimals={this.formatTokenAmountToDecimals}
+                  tokenDecimals={tokenDecimals}
                   />
                   <TxInfo 
                   web3={web3} 

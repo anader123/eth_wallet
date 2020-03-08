@@ -24,7 +24,7 @@ export default class TxInfo extends Component {
                         return (
                           <tr key={key} >
                             <td>{tx.returnValues.to}</td>
-                            <td>{web3.utils.fromWei(tx.returnValues.value.toString(), 'Ether')} {tokenSymbol} </td>
+                            <td>{formatTokenAmount(tx.returnValues.value, tokenDecimals)} {tokenSymbol} </td>
                             <td>
                               <a
                               href={`https://etherscan.io/tx/${tx.transactionHash}`}

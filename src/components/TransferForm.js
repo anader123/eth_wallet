@@ -1,23 +1,25 @@
 import React, { Component } from 'react';
-import { Dropdown, DropdownButton, Button } from 'react-bootstrap';
+import TokenDropdown from './TokenDropdown';
 
 export default class TransferForm extends Component {
     render() {
         const { 
           web3, 
-          transferDai, 
+          transferToken, 
           changeToken, 
-          tokenSymbol 
+          tokenSymbol,
+          formatTokenAmountToDecimals,
+          tokenDecimals
         } = this.props;
         return (
             <div>
                  <form 
                  className='transfer-form'
                  onSubmit={(event) => {
-                    event.preventDefault()
-                    const recipient = this.recipient.value
-                    const amount = web3.utils.toWei(this.amount.value, 'Ether')
-                    transferDai(recipient, amount)
+                    event.preventDefault();
+                    const recipient = this.recipient.value;
+                    const amount = formatTokenAmountToDecimals(this.amount.value, tokenDecimals);
+                    transferToken(recipient, amount);
                   }}>
                     <div className="form-group mr-sm-2">
                       <input
@@ -39,15 +41,7 @@ export default class TransferForm extends Component {
                     </div>
                     <button type="submit" className="btn btn-primary btn-block send-btn">Send</button>
                   </form>
-                  <DropdownButton
-                    title={tokenSymbol}
-                    variant='primary'
-                    id='dropdown-variants-Primary'
-                    key='Input-Token'
-                    >
-                        <Dropdown.Item onSelect={() => changeToken(0)} eventKey="1">DAI</Dropdown.Item>
-                        <Dropdown.Item onSelect={() => changeToken(1)} eventKey="2">USDC</Dropdown.Item>
-                  </DropdownButton>
+                  <TokenDropdown changeToken={changeToken} tokenSymbol={tokenSymbol}/>
                   <br/>
             </div>
         )
