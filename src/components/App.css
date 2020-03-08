@@ -1,1 +1,17 @@
 /* Styles go here */
+
+.transfer-form {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-bottom: 2em;
+    margin-top: 1em;
+}
+
+.form-group {
+    width: 75%;
+}
+
+.send-btn {
+    width: 50%;
+}

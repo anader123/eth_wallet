@@ -7,6 +7,7 @@ import DaiTokenMock from '../abis/DaiTokenMock.json'
 // Components
 import TxInfo from './TxInfo';
 import TransferForm from './TransferForm';
+import Navbar from './Navbar';
 
 class App extends Component {
 
@@ -105,26 +106,12 @@ class App extends Component {
     } = this.state;
     return (
       <div>
-        <nav className="navbar navbar-dark fixed-top bg-dark flex-md-nowrap p-0 shadow">
-          <div
-          className="navbar-brand col-sm-3 col-md-2 mr-0"
-          >
-            Simple Dai Wallet
-          </div>
-          {!walletConnected 
-          ?
-          <button onClick={this.connectWallet}>Connect Wallet</button>
-          :
-          <a
-            className="navbar-brand"
-            href={`https://etherscan.io/address/${account}`}
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            {shortAccount}
-          </a>
-          }
-        </nav>
+        <Navbar 
+        walletConnected={walletConnected} 
+        account={account} 
+        shortAccount={shortAccount} 
+        connectWallet={this.connectWallet}
+        />
         <div className="container-fluid mt-5">
           <div className="row">
             <main role="main" className="col-lg-12 d-flex text-center">

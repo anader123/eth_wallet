@@ -5,7 +5,9 @@ export default class TransferForm extends Component {
         const { web3, transferDai } = this.props;
         return (
             <div>
-                 <form onSubmit={(event) => {
+                 <form 
+                 className='transfer-form'
+                 onSubmit={(event) => {
                     event.preventDefault()
                     const recipient = this.recipient.value
                     const amount = web3.utils.toWei(this.amount.value, 'Ether')
@@ -29,7 +31,7 @@ export default class TransferForm extends Component {
                         placeholder="Amount"
                         required />
                     </div>
-                    <button type="submit" className="btn btn-primary btn-block">Send</button>
+                    <button type="submit" className="btn btn-primary btn-block send-btn">Send</button>
                   </form>
             </div>
         )
