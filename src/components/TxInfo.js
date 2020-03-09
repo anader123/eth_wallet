@@ -3,7 +3,6 @@ import React, { Component } from 'react'
 export default class TxInfo extends Component {
     render() {
         const { 
-          web3, 
           transactions, 
           tokenSymbol, 
           formatTokenAmount, 

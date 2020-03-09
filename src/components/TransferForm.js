@@ -4,7 +4,6 @@ import TokenDropdown from './TokenDropdown';
 export default class TransferForm extends Component {
     render() {
         const { 
-          web3, 
           transferToken, 
           changeToken, 
           tokenSymbol,

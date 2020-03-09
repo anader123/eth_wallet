@@ -1,6 +1,6 @@
 import React, { Component } from 'react';
 import { tokenData } from '../utils/tokenData';
-import { Dropdown, DropdownButton, Button } from 'react-bootstrap';
+import { Dropdown, DropdownButton } from 'react-bootstrap';
 
 export default class TokenDropdown extends Component {
     render() {

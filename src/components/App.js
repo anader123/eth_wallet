@@ -37,16 +37,10 @@ class App extends Component {
     BigNumber.config({ DECIMAL_PLACES: 4 });
   }
 
-  async componentDidMount() {
-    // await this.loadWeb3();
-    // await this.loadBlockchainData();
-    // this.setState({ walletConnected: true });
-    this.checkAccount();
-  }
-
   connectWallet = async () => {
     await this.loadWeb3();
     await this.loadBlockchainData();
+    await this.checkAccount();
     this.setState({ walletConnected: true });
   }
 
@@ -74,7 +68,7 @@ class App extends Component {
   }
 
   loadBlockchainData = async () => {
-    const { tokenAddress, web3, tokenDecimals, tokenSymbol } = this.state;
+    const { tokenAddress, web3, tokenDecimals } = this.state;
 
     const accounts = await web3.eth.getAccounts();
     const account = accounts[0]; 
@@ -94,13 +88,10 @@ class App extends Component {
   }
 
   changeToken = async (index) => {
-    const { web3 } = this.state;
-
     const tokenAddress = tokenData[index].address;
     const tokenSymbol = tokenData[index].symbol;
     const tokenDecimals = tokenData[index].decimal;
-    // const tokenContractInstance = new web3.eth.Contract(abi, tokenAddress);
-    
+
     await this.setState({ tokenAddress, tokenSymbol, tokenDecimals })
     this.loadBlockchainData();
 
@@ -116,25 +107,20 @@ class App extends Component {
   }
 
   transferToken = async (recipient, amount) => {
-    const { tokenContractInstance, account, web3 } = this.state;
+    const { tokenContractInstance, account, tokenDecimals } = this.state;
     const decimalBalance = await tokenContractInstance.methods.balanceOf(account).call();
+    const balance = this.formatTokenAmount(decimalBalance, tokenDecimals);
 
-    // console.log(decimalBalance)
-
-    // const balance = web3.utils.fromWei(decimalBalance);
-
-    // console.log(balance)
-    
-    // if(balance >= amount) {
+    if(balance >= amount) {
       await tokenContractInstance.methods.transfer(recipient, amount).send({ from: account })
       .on('confirmation', async () => {
         this.loadBlockchainData();
       });
                                                                               
-    // }
-    // else {
-    //   window.alert("You have less than that amount of DAI in this address");
-    // }
+    }
+    else {
+      window.alert("You have less than that amount of token in this address");
+    }
   }
 
   formatTokenAmount = (amount, decimals) => {
@@ -173,7 +159,7 @@ class App extends Component {
             <main role="main" className="col-lg-12 d-flex text-center">
               <div className="content mr-auto ml-auto" style={{ width: "500px" }}>
                 <br/>
-                <img src={tokenImg} width="150" />
+                <img alt='' src={tokenImg} width="150" />
                 <br/>
                 {!walletConnected
                 ?
